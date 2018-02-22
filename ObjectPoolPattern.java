@@ -1,124 +1,157 @@
 
-Interface Reusable {
-	
-	public void run();
+import java.util.*;
+import java.lang.*;
+import java.io.*;
+
+
+interface Reusable {
+    
+    public void run();
 
     public String getClassName();
 }
 
 
-public class Object1 implements Reusable {
+ class Object1 implements Reusable {
 
     private String className;
 
     public Object1()
     {
-      this.classname="Object1";
+      this.className="Object1";
     }
-	
-	@Override
-	public void run() {
-	    System.out.println("Object1 is running");
-	}
+    
+    @Override
+    public void run() {
+        System.out.println("Object1 is running");
+    }
 
-	@Override
-	public String getClassName() {
+    @Override
+    public String getClassName() {
 
-		return this.classname;
-	}
+        return this.className;
+    }
 }
 
-public class Object2 implements Reusable {
+ class Object2 implements Reusable {
 
     private String className;
 
     public Object2()
     {
-      this.classname="Object2";
+      this.className="Object2";
     }
-	
-	@Override
-	public void run() {
-	    System.out.println("Object2 is running");
-	}
+    
+    @Override
+    public void run() {
+        System.out.println("Object2 is running");
+    }
 
-	@Override
-	public String getClassName() {
+    @Override
+    public String getClassName() {
 
-		return this.classname;
-	}
+        return this.className;
+    }
 }
 
 
-public class ObjectPool {
+ class ObjectPool {
 
-	private ObjectPool objectPool;
-	private Map<String,Resuable> objectPoolMap;
-	private int max_pool_size;
-	private int current_pool_size;
+    private static ObjectPool objectPool = null;
+    private static Map<String,Reusable> objectPoolMap = new HashMap<String,Reusable>();
+    private static int max_pool_size;
+    private static int current_pool_size;
 
-	private ObjectPool() {
+    private ObjectPool() {
 
-	}
-
-	private setMaxPoolSize(int size) {
-		this.max_pool_size = size;
-	}
-
-	private setCurrentPoolSize(int size) {
-		this.current_pool_size = size;
-	}
-
-	private getCurrentPoolSize() {
-
-		return this.current_pool_size;
-	}
-
-	private getMaxPoolSize() {
-
-		return this.max_pool_size;
-	}
-    
-    public ObjectPool getInstance() {
-    	if(objectPool == null) {
-    		objectPool = new ObjectPool();
-    		objectPool.setMaxPoolSize(5);
-    		objectPoolMap.put("object1", new Object1());
-    		objectPoolMap.put("Object2", new Object2());
-    		objectPool.setCurrentPoolSize(2);
-    	}
-    	return objectPool;
     }
 
-    public Reusable acquireReusable(String className) {
-    	// checks if the map , already contains the given Object.
-    	// If so, removes from Map and returns it to Client.
-    	Resuable resuable;
-    	if(objectPoolMap.contains(className))
-    	{
-    	    resuable = objectPoolMap.get(className);
-    		objectPoolMap.remove(className);
-    	}
-    	// So, object is not there, so we can create a new Object , if the size of pool is not filled.
-    	else {
-    		if(getCurrentPoolSize < getMaxPoolSize()) {
-    			// creates an Object of reference Resuable.
-                // incraeasse the currentPoolsize
-    			objectPoolMap.put(className, resuable);
-    		}
-    		else {
-    			throw Exception("Pool doesnt have the Object and it is at its limit");
-    		}
-    	}
+    private void setMaxPoolSize(int size) {
+        this.max_pool_size = size;
+    }
+
+    private void setCurrentPoolSize(int size) {
+        this.current_pool_size = size;
+    }
+
+    private int getCurrentPoolSize() {
+
+        return this.current_pool_size;
+    }
+
+    private int getMaxPoolSize() {
+
+        return this.max_pool_size;
+    }
+    
+    public static ObjectPool getInstance() {
+        if(objectPool == null) {
+            objectPool = new ObjectPool();
+            objectPool.setMaxPoolSize(2);
+            objectPoolMap.put("Object1", new Object1());
+            objectPoolMap.put("Object2", new Object2());
+            objectPool.setCurrentPoolSize(2);
+        }
+        return objectPool;
+    }
+
+    public Reusable acquireReusable(String className) throws Exception{
+        Reusable resuable;
+        if(objectPoolMap.containsKey(className))
+        {
+            resuable = objectPoolMap.get(className);
+            objectPoolMap.remove(className);
+            setCurrentPoolSize(getCurrentPoolSize()-1);
+        }
+        else {
+            if(getCurrentPoolSize() < getMaxPoolSize()) {
+                resuable = createObject(className);
+                objectPoolMap.put(className, resuable);
+                setCurrentPoolSize(getCurrentPoolSize()+1);
+            }
+            else {
+                throw new Exception("Pool doesnt have the Object and it is at its limit");
+            }
+        }
         return resuable;
     }
 
-    public void releaseReusable(Resuable resuable) {
-    	// if ObjectPool, already contains an instance of it, 
-    	//no need to maintain and need to check Pool Size too
-    	if(!objectPoolMap.contains(className) && (getCurrentPoolSize < getMaxPoolSize())) {
-    		objectPoolMap.put(className, resuable);
-    		//incraese the current pool size
-    	}
+    public void releaseReusable(Reusable resuable) {
+        // if ObjectPool, already contains an instance of it, 
+        //no need to maintain and need to check Pool Size too
+        System.out.println("ObjectPool is getting added objects"+resuable.getClassName());
+        if(!objectPoolMap.containsKey(resuable.getClassName()) && (getCurrentPoolSize() < getMaxPoolSize())) {
+            objectPoolMap.put(resuable.getClassName(), resuable);
+            setCurrentPoolSize(getCurrentPoolSize()+1);
+        }
+    }
+
+    private Reusable createObject(String className) {
+
+        System.out.println("Create Object called for class with Name:"+className);
+
+        switch(className) {
+            case "Object1" :
+            return new Object1();
+            case "Object2" :
+            return new Object2();
+            default :
+            return null;
+        }
+    }
+}
+
+
+class ObjectPoolPatternDemo {
+
+    public static void main(String args[]) throws Exception {
+
+        ObjectPool objectPool = ObjectPool.getInstance();
+        Reusable resuable1 =   objectPool.acquireReusable("Object1");
+        Reusable resuable2 =   objectPool.acquireReusable("Object2");
+        Reusable resuable3 =   objectPool.acquireReusable("Object1");
+        Reusable resuable4 =   objectPool.acquireReusable("Object2");
+        objectPool.releaseReusable(resuable1);
+        objectPool.releaseReusable(resuable2);
     }
 }

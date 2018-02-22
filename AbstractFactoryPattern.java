@@ -1,4 +1,11 @@
-Interface Brake 
+
+
+import java.util.*;
+import java.lang.*;
+import java.io.*;
+
+
+interface Brake 
 {
   public void createBrake();
 }
@@ -36,9 +43,9 @@ class Brake3 implements Brake
 	}
 }
 
-Interface Wheel {
+interface Wheel {
 
-	public createWheel();
+	public void createWheel();
 }
 
 class Wheel1 implements Wheel 
@@ -130,6 +137,7 @@ class FactoryProducer {
 	private AbstractFactory abstractFactory;
 
 	public static AbstractFactory getComponentFactory(String componentFactory) {
+
 		switch(componentFactory) {
 		case "BREAK" :
 		return new BrakeFactory();
@@ -139,4 +147,19 @@ class FactoryProducer {
 		return null;
 	    }
     }
+}
+
+class AbstractFactoryPatternDemo {
+
+	public static void main(String args[]) {
+
+		AbstractFactory brakeFactory = FactoryProducer.getComponentFactory("BREAK");
+
+		AbstractFactory wheelFactory = FactoryProducer.getComponentFactory("WHEEL");
+
+		Brake b = brakeFactory.getBrake("Brake1");
+		Wheel w = wheelFactory.getWheel("Wheel1");
+		b.createBrake();
+		w.createWheel();
+	}
 }
